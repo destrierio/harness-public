@@ -1,0 +1,69 @@
+---
+config:
+  layout: elk
+  theme: base
+  themeCSS: |
+    .nodeLabel, .nodeLabel *, .edgeLabel, .edgeLabel *, .label, .label * { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif !important; }
+  themeVariables:
+    fontFamily: "-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif"
+    fontSize: "15px"
+    lineColor: "#334155"
+    primaryColor: "#ffffff"
+    primaryTextColor: "#0f172a"
+    primaryBorderColor: "#334155"
+    edgeLabelBackground: "#ffffff"
+  flowchart:
+    curve: linear
+    nodeSpacing: 50
+    rankSpacing: 70
+  elk:
+    nodePlacementStrategy: BRANDES_KOEPF
+---
+flowchart TB
+  O("`**Orchestrator**
+Runs the loop
+① Plan the next move
+⑤ Check progress, replan`")
+  S("`**Specialists**
+recon · web · pwn · privesc
+One job, then report back`")
+  T("`**Tools**
+shell · sessions · Python
+HTTP · browser · artifacts
+reverse-shell listener`")
+  G("`**CTF target**
+Services and binaries
+Holds the flags`")
+  F("`**Flag scoring**
+Verifies each flag
+and records the capture`")
+  M("`**Shared memory**
+Findings, creds, access,
+plan, notes, progress
+Feeds the SITUATION digest`")
+  C("`**Context helpers**
+Triage condenses output
+Summarizer keeps
+trimmed reasoning`")
+  K("`**Skill library**
+Playbooks, loaded
+on demand`")
+
+  O ==>|"② act"| T
+  T ==>|"③ run"| G
+  G -.->|"output"| T
+  T ==>|"④ observe"| O
+  O <-->|"delegate / report"| S
+  S -->|"shares tools"| T
+  O <-->|"read / write each turn"| M
+  T <-->|"condenses output"| C
+  T <-->|"consult_skill"| K
+  T ==>|"submit_flag"| F
+
+  classDef hub fill:#ffffff,stroke:#0f172a,stroke-width:2.5px,color:#0f172a;
+  classDef actor fill:#ffffff,stroke:#334155,stroke-width:1.5px,color:#0f172a;
+  classDef support fill:#f1f5f9,stroke:#64748b,stroke-width:1.5px,color:#334155;
+
+  class O hub;
+  class S,T,G,F actor;
+  class M,C,K support;

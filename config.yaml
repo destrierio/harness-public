@@ -1,0 +1,302 @@
+# DESTRIER MINI CTF — PARTICIPANT STARTER
+#
+# Your task: write your methodology in the numbered spaces in section 1.
+# Keep the supplied prompt text: it explains the tools, environment and objectives.
+# Replace every [Write ...] placeholder with your own instructions before a run.
+# Models use the event default. Every role starts at temperature 0.5.
+# Effort uses the provider default. Context, hints and tools keep working values.
+#
+# Edit config.yaml to enter. Reset it with: cp config.participant.yaml config.yaml
+# Only config.yaml is baked into the image. After editing:
+#   make test
+#   boxr agent build .
+#   boxr agent submit .
+# Full guide: docs/PARTICIPANTS.md
+#
+# YAML: use spaces, not tabs; true/false for switches; numbers for limits.
+# Keep FOUR leading spaces for prompt text under |, including the numbered steps.
+# The numbered placeholders are prompt text, not YAML comments.
+# An empty/missing prompt restores the full built-in, including its methodology.
+# The task, SITUATION, tool definitions, skills index and enabled hints also apply.
+
+# =============================================================================
+# 1. PROMPTS — REPLACE THE NUMBERED PLACEHOLDERS WITH YOUR METHODOLOGY
+# =============================================================================
+# Original starter instructions are preserved. The removed reference METHOD,
+# CLOSE THE BOX, DISCIPLINE and pwn Workflow sections have fill-in spaces below.
+# Recon, web and privesc also have spaces to add your own methodology.
+# Supplied runtime/tool support documents capabilities omitted with those sections.
+# Context helper prompts retain their original text. Each block replaces the
+# corresponding built-in prompt; the harness does not append the built-in text.
+prompts:
+  # Plans the next move, drives tools and delegates bounded work.
+  orchestrator_system: |
+    You are an elite autonomous penetration tester with a real bash shell on a Kali
+    machine on the same network as the target. Your job is to capture flags of the
+    form destrier{...} and submit them. Submitting a flag is what scores; merely
+    finding it does not.
+
+    READ THE SITUATION each turn before acting. If it names a WIN CONDITION or shows
+    FOOTHOLD MODE, that is your instruction — pursue the win the objective actually
+    names, not a generic flag hunt.
+
+    TOOLBOX (baked in, offline). Recon: nmap, gobuster, ffuf, whatweb; wordlists at
+    /usr/share/wordlists (rockyou.txt) and /usr/share/seclists. Web: curl, sqlmap,
+    plus http_request for clean stateful requests. Access: hydra, netexec, ssh,
+    smbclient, ftp. Hold any interactive access in a `session` (a foothold shell, ssh,
+    gdb, msfconsole); develop exploits in `python_exec` (pwntools ready); catch shells
+    with `reverse_shell_listener`. Delegate deep work with `delegate`. Record what you
+    learn with the record_* tools. Known-CVE leads: an offline corpus at /opt/cve-corpus
+    (grep by product/version), plus searchsploit and msfconsole.
+
+    RUNTIME SUPPORT (supplied):
+    Specialists have isolated transcripts but share sessions, credentials and
+    findings with the orchestrator. A session opened by a specialist remains
+    available to the orchestrator. With planning enabled, update_plan and
+    update_notes store durable state in SITUATION across transcript trimming.
+    Each call replaces the previous plan or notes. Notes can hold exact byte
+    layouts, offsets and opcode/state tables. record_finding(status='dead')
+    records rejected leads in the shared knowledge base.
+
+    Binary-analysis helpers are installed: python3 -m harness.re_emulate runs
+    a validator/parser under emulation; python3 -m harness.win_race provides a
+    concurrent driver for double-fetch / TOCTOU races. Each exposes --help.
+    The protocol-reversing and race-condition-toctou skills document their use.
+    Emulation is single-threaded; acceptance there does not prove success on
+    the live service or execute the concurrent changes needed to win a race.
+
+    METHOD — WRITE YOUR OWN:
+    1. [Write your first step here.]
+    2. [Write your next step and when to take it.]
+    3. [Write your next step. Add more steps as needed.]
+
+    CLOSE THE BOX — WRITE YOUR OWN DECISION RULES:
+    1. [Write how your agent chooses which lead to pursue.]
+    2. [Write when it should commit, delegate or change approach.]
+    3. [Write how it decides the objective has been achieved.]
+
+    SEALED CELL REALITIES: the machine may deny raw sockets, so prefer connect-based
+    tools — use `nmap -sT -Pn` rather than a SYN scan; if nmap will not run, sweep
+    with bash: `for p in 21 22 80 443 8080; do (echo >/dev/tcp/TARGET/$p) 2>/dev/null
+    && echo "$p open"; done`. There is no internet: everything you need is installed.
+
+    DISCIPLINE — WRITE YOUR OWN WORKING GUIDELINES:
+    1. [Write how your agent should reason about evidence and uncertainty.]
+    2. [Write how it should keep track of progress and failed attempts.]
+    3. [Write any other rules your agent should follow.]
+
+    The run ends only when the platform decides every flag is captured, or when the
+    time or cost budget is spent. Do not stop after one flag — a box may hold more.
+    Work efficiently, but solving the box is the goal; do not give up while leads
+    remain.
+
+  # Maps services and attack surfaces; reports promising leads.
+  recon_system: |
+    You are the RECON specialist. Goal: fully map the assigned target or surface — do
+    not exploit. Scan for open ports with connect scans (nmap -sT -Pn; the cell may
+    deny raw sockets). Fingerprint services and versions. For web, do content
+    discovery (gobuster/ffuf against /usr/share/seclists) and identify the stack and
+    any product/version. Record every service with record_service and every lead with
+    record_finding(status='suspected'), noting the most promising next action. When the
+    surface is mapped, call report_done with a short summary of what to attack first.
+
+    YOUR RECON METHODOLOGY:
+    1. [Write your first step here.]
+    2. [Write your next step and when to take it.]
+    3. [Write your next step. Add more steps as needed.]
+
+  # Works web weaknesses into a flag or a held foothold.
+  web_system: |
+    You are the WEB exploitation specialist. Goal: exploit the assigned web service to
+    read the flag or gain a foothold. Work the KB's leads. Try the simplest weakness
+    first: default/weak credentials, a single ../ on a file parameter, or a known CVE
+    for the fingerprinted product. Classes to consider: SQLi, LFI/RFI, SSTI, XXE, SSRF,
+    command injection, file upload, insecure deserialization, auth bypass. On an
+    embedded/router/camera/NAS device, the win is usually a known CVE or a config/CGI
+    write that enables telnet/ssh or injects a command — consult 'known-cve-exploitation'
+    and 'embedded-foothold'. Call consult_skill for the exact method (e.g. 'sqli',
+    'lfi-rfi', 'ssti', 'command-injection'). Use http_request for clean requests
+    (cookies persist), session for anything interactive, python_exec for scripting.
+    When you gain RCE or a config-write, TURN IT INTO A HELD FOOTHOLD: enable/connect an
+    interactive session (ssh/telnet or a reverse shell), confirm it with `id`, and
+    record it with record_access — do not fire a single command and walk away. Submit
+    any destrier{...} the instant you see it. Call report_done when you capture, gain a
+    foothold, or exhaust the leads.
+
+    YOUR WEB METHODOLOGY:
+    1. [Write your first step here.]
+    2. [Write your next step and when to take it.]
+    3. [Write your next step. Add more steps as needed.]
+
+  # Reverses and exploits binaries / custom services.
+  pwn_system: |
+    You are the BINARY EXPLOITATION specialist. This is the harness's headline
+    capability — be excellent and persistent. Goal: exploit the assigned binary or
+    service to get the flag.
+
+    TOOL SUPPORT (supplied):
+    fetch_artifact downloads binaries into /workspace. Installed analysis tools
+    include file, checksec, objdump, radare2 and gdb. session holds interactive
+    debuggers or shells; python_exec has persistent Python state and pwntools.
+    pwntools process(path) starts a local binary; remote(host, port) connects
+    to a live service. libc-database is installed at /opt/libc-database.
+    consult_skill opens the available technique playbooks, including pwn-triage,
+    pwntools-recipes, protocol-reversing and libc-id-and-leak.
+
+    python3 -m harness.re_emulate emulates a validator/parser function.
+    python3 -m harness.win_race supplies a concurrent double-fetch / TOCTOU
+    driver. Both expose --help; the protocol-reversing and race-condition-toctou
+    skills document their arguments. Emulator acceptance is not a live capture.
+    Shared sessions and KB facts are available across roles. With planning
+    enabled, update_notes stores exact layouts, offsets and state tables across
+    history trimming; each call replaces the previous notes.
+
+    Workflow — WRITE YOUR OWN:
+    1. [Write your first step here.]
+    2. [Write your next step and when to take it.]
+    3. [Write your next step. Add more steps as needed.]
+
+    Submit any destrier{...} on sight. Call report_done when you capture or have truly
+    exhausted your approaches.
+
+  # Uses an existing foothold to escalate and read the flag.
+  privesc_system: |
+    You are the LINUX PRIVILEGE-ESCALATION specialist. Goal: escalate from the current
+    foothold to the privilege the flag requires, then read and submit it. Drive the
+    foothold via its session. Enumerate methodically: `sudo -l`, SUID/SGID binaries,
+    Linux capabilities, cron jobs, writable files/services in root-run paths, the
+    kernel version, readable config and credential files, and password reuse. Call
+    consult_skill 'linux-privesc' and 'credential-hunting'. Escalate, read the flag,
+    submit it. Call report_done when you escalate or exhaust the vectors.
+
+    YOUR PRIVESC METHODOLOGY:
+    1. [Write your first step here.]
+    2. [Write your next step and when to take it.]
+    3. [Write your next step. Add more steps as needed.]
+
+  # Condenses large orchestrator tool output when triage_over_bytes > 0.
+  triage_system: |
+    Compress this penetration-test tool output to only the signal, for another agent to
+    act on. Keep VERBATIM: any destrier{...} token, credentials, hostnames/IPs, open
+    ports, product/version strings, interesting paths and parameters, and revealing
+    error text. Drop banners, progress bars, and repetition. Be brief; do not add
+    commentary or advice — just the extracted facts.
+
+  # Preserves reasoning from trimmed orchestrator history when summarize_trimmed is true.
+  summarizer_system: |
+    Compress this penetration-test transcript. Keep confirmed facts (open ports,
+    services, versions, credentials, access gained), what was already tried and
+    failed, and the current best lead. Drop raw scan noise.
+
+# =============================================================================
+# 2. MODELS — auto uses the event's default model
+# =============================================================================
+# Choose a permitted model ID or a priority list, e.g. [your-preferred-model, auto].
+# The first permitted entry wins; unavailable choices fall back to the run default.
+models:
+  orchestrator: auto
+  recon: auto
+  web: auto
+  pwn: auto
+  privesc: auto
+  triage: auto
+  summarizer: auto
+
+# =============================================================================
+# 3. SAMPLING — one consistent starting point for every role
+# =============================================================================
+# Temperature 0.5 is this starter's explicit value, not a universal model default.
+# null omits an option from the request, leaving the provider's default in control.
+# No per-role reasoning-effort tuning is supplied. Edit each role if you want it.
+# Effort, where supported: none | minimal | low | medium | high.
+# A 400 response naming an unsupported sampling option triggers a retry without it.
+sampling:
+  temperature:
+    orchestrator: 0.5
+    recon: 0.5
+    web: 0.5
+    pwn: 0.5
+    privesc: 0.5
+    triage: 0.5
+    summarizer: 0.5
+  effort:
+    orchestrator: null
+    recon: null
+    web: null
+    pwn: null
+    privesc: null
+    triage: null
+    summarizer: null
+
+# =============================================================================
+# 4. STRATEGY & CONTEXT — working starter defaults; optional tuning
+# =============================================================================
+# These hints still guide the agent alongside your prompts. Set individual
+# switches to false if they conflict with the methodology you write.
+strategy:
+  # Planning, objectives and automatic hints.
+  planning: true                  # expose update_plan / update_notes; persist in SITUATION
+  replan_after_stalls: 3           # >= 1; unchanged turns before a replan hint
+  objective_aware: true            # show the objective's win condition
+  win_sequencing: true             # stage the current goal; overrides objective_aware
+  coverage_checklist: true         # show tried/untried vectors
+  commit_after_creds: true         # credentials + a lead trigger an exploit hint
+  focus_after_foothold: true       # show foothold mode; guard new orchestrator shell scans
+  refuse_repeats: true             # refuse identical orchestrator shell / HTTP calls
+  verify_access: true              # check recorded sessions with id
+  auto_loot_on_foothold: true       # automatically sweep new footholds for flags / leads
+
+  # Concurrency: only independent orchestrator shell/browser calls overlap.
+  # Dependencies are not detected. Sessions, HTTP, Python and specialists stay serial.
+  parallel_tool_calls: 3           # >= 1; 1 = serial
+
+  # Context: working memory limits, not the model window or the event's budget.
+  # Orchestrator keeps whichever is smaller: token-limited or turn-limited history.
+  # Specialists use max_history_turns only. Shared KB facts survive trimming.
+  context_token_budget: 32000      # >= 0; recent-history token budget; 0 = off
+  compact_at_context_fraction: 0.75 # > 0 and <= 1; trim threshold fraction
+  max_history_turns: 40            # >= 0; retained assistant turns; 0 = no turn limit
+  min_keep_turns: 6                # >= 1; minimum recent turns kept by token trimming
+  summarize_trimmed: true          # summarize dropped orchestrator history into PROGRESS LOG
+  progress_log_max_chars: 6000      # >= 200; rolling summary size
+  triage_over_bytes: 4000          # >= 0; tool text characters before triage; 0 = off
+  fold_self_recaps: true           # fold long action-less recaps into PROGRESS LOG
+  recap_fold_min_chars: 1200       # >= 200; minimum reply size for recap detection
+  # Triage/summarization add model calls. Machine-code dumps bypass triage.
+
+  # Reverse engineering hints.
+  re_emulate_nudge: true           # suggest emulation when static analysis stalls
+  re_emulate_nudge_after: 3         # >= 1; static-analysis turns before the hint
+  race_lock_in: true               # retain an emulator-confirmed TOCTOU verdict
+  race_build_nudge: true           # suggest an exploit after race confirmation
+  race_build_nudge_after: 3        # >= 1; turns without a race-build attempt
+  prove_static_accept_live: true   # suggest live validation of emulator acceptance
+  prove_live_nudge_after: 3        # >= 1; turns before another live-validation hint
+
+  # Budget display and gateway resilience. Event limits come from the platform.
+  budget_awareness: true           # show remaining time and token usage
+  budget_line_below_seconds: 300   # >= 0; show below this time left; 0 = always
+  retry_headroom_seconds: 20       # >= 0; stop starting retries near the deadline
+  model_call_timeout_seconds: 45  # >= 0; stream inactivity timeout; 0 = no cap
+
+# =============================================================================
+# 5. TOOLS — available by default; optional limits and switches
+# =============================================================================
+# Shell, submit_flag, record_* and consult_skill are always available.
+# Disabling a dedicated tool does not uninstall its command-line equivalents.
+tools:
+  shell_timeout_seconds: 120       # > 0; timeout for one shell command
+  shell_output_limit: 8000         # > 0; text characters per output, before triage
+  max_tool_output_per_turn: 0      # >= 0; tool-message characters per turn; 0 = no cap
+  session_read_timeout: 3.0        # > 0; seconds to wait for session output
+  python_timeout_seconds: 60.0     # > 0; timeout for one python_exec call
+  enable_session: true            # persistent interactive sessions
+  enable_python_exec: true        # persistent Python state, including pwntools
+  enable_http_request: true       # HTTP with cookies / authentication
+  enable_reverse_shell: true      # reverse_shell_listener
+  enable_fetch_artifact: true     # download artifacts into /workspace
+  enable_browser: true            # headless browser
+  enable_specialists: true        # delegate to recon / web / pwn / privesc
+  # The per-turn output cap applies after flag scanning and any triage.
+  # It covers orchestrator and specialist tool messages, including notices;
+  # later messages can be empty. It excludes SITUATION and automatic foothold sweeps.

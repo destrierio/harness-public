@@ -1,0 +1,25 @@
+# Lean Linux image to PROVE the pwn workflow end to end: real pwntools + gdb + a
+# compiled vulnerable binary. Not the production image (that is FROM harness-base);
+# this is a fast, self-contained proof that the pwn specialist path actually works.
+# Pinned to amd64 to match the production platform (the exploit is x86_64).
+FROM --platform=linux/amd64 ubuntu:22.04
+ENV DEBIAN_FRONTEND=noninteractive PIP_BREAK_SYSTEM_PACKAGES=1 PYTHONUNBUFFERED=1
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      python3 python3-pip gcc gdb libc6-dev binutils ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+RUN pip3 install --no-cache-dir pwntools pyyaml
+
+WORKDIR /app
+ENV PYTHONPATH=/app
+COPY harness/ /app/harness/
+COPY skills/ /app/skills/
+COPY config.yaml /app/config.yaml
+COPY testrig/ /app/testrig/
+
+# Build the vulnerable target and plant the flag in the workspace.
+RUN mkdir -p /workspace \
+    && gcc -fno-stack-protector -no-pie -o /workspace/vuln /app/testrig/pwn/vuln.c \
+    && printf 'destrier{pwn_ret2win_1}\n' > /workspace/flag.txt
+
+WORKDIR /workspace
+CMD ["python3", "-m", "testrig.run_pwn_local"]

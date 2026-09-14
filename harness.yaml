@@ -1,0 +1,14 @@
+# destrier-harness manifest. Validated against protocol/schemas/harness.schema.json.
+# runtime.image is a format-valid placeholder; `boxr agent build` rewrites it with
+# the pushed digest.
+contractVersion: "1.0"
+name: destrier-harness
+version: "2.0.0"
+runtime:
+  kind: container
+  image: ghcr.io/destrierio/destrier-harness@sha256:0000000000000000000000000000000000000000000000000000000000000000
+resources:
+  cpu: 4
+  memoryMiB: 8192
+  storageMiB: 40960
+providers: [openrouter]
